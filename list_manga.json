@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Category of manga 1",
+    "main_dir": "D:/Manga/Category of manga 1/",
+    "manga": [
+      {
+        "name": "Manga 1",
+        "link": "https://komikcast.com/komik/manga-1/"
+      },
+      {
+        "name": "Manga 2",
+        "link": "https://komikcast.com/komik/manga-2/"
+      }
+    ]
+  },
+  {
+    "name": "Category of manga 2",
+    "main_dir": "D:/Manga/Category of manga 2/",
+    "manga": [
+      {
+        "name": "Manga 3",
+        "link": "https://komikcast.com/komik/manga-3/"
+      },
+      {
+        "name": "Manga 4",
+        "link": "https://www.komikone.com/manga/manga-4/"
+      }
+    ]
+  }
+]
