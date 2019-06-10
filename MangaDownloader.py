@@ -57,7 +57,7 @@ def urlretrieve(url: str):
         return urlretrieve(url)
     except Exception as s:
         print(s)
-        print("Error download {}".format(url))
+        print("Error download {}, Ulangi lagi".format(url))
         return urlretrieve(url)
 
 
@@ -110,6 +110,8 @@ class MangaDownloader:
         self.__modul_name = re.sub(r"\W+", '', self.__modul_name)
         self.__manga_dir = self.__main_dir + "/" + self.__manga_name + "/" if not self.__main_dir.endswith(
             '/') else self.__main_dir + self.__manga_name + "/"
+        if not os.path.exists(self.__manga_dir):
+            os.mkdir(self.__manga_dir)
 
     def set_manga_page_link(self, manga_page_link):
         self.__manga_page_link = manga_page_link
@@ -134,37 +136,56 @@ class MangaDownloader:
             span_elements = BS(content, 'html.parser').findAll('span', {'class': 'leftoff'})
             a_elements = BS(span_elements.__str__(), 'html.parser').find_all('a')
             for a in a_elements:
-                links[a.text] = a.attrs['href']
+                if 'end' in a.text.lower():
+                    links[a.text + ' END'] = a.attrs['href']
+                else:
+                    links[a.text] = a.attrs['href']
             banner_link_image = BS(content, 'html.parser').find('img', {'class': 'attachment-post-thumbnail'}).attrs[
                 'src']
         elif "komikgue" in self.__manga_page_link:
             a_elements = BS(content, 'html.parser').findAll('a', {'style': 'text-decoration:none;'})
             span_elements = BS(a_elements.__str__(), 'html.parser').find_all('span')
             for a, span in zip(a_elements, span_elements):
-                links["Chapter {}".format(span.text)] = a.attrs['href']
+                if 'end' in a.text.lower():
+                    links["Chapter {} END".format(span.text)] = a.attrs['href']
+                else:
+                    links["Chapter {}".format(span.text)] = a.attrs['href']
             banner_link_image = \
                 BS(content, 'html.parser').find('img', {'class': 'img-responsive', 'itemprop': 'image'}).attrs['src']
         elif "komikone" in self.__manga_page_link:
             span_elements = BS(content, 'html.parser').findAll('span', {'class': 'lchx'})
             a_elements = BS(span_elements.__str__(), 'html.parser').find_all('a')
             for a in a_elements:
-                links[a.text] = a.attrs['href']
+                if 'end' in a.text.lower():
+                    links[a.text + ' END'] = a.attrs['href']
+                else:
+                    links[a.text] = a.attrs['href']
             banner_link_image = BS(content, 'html.parser').find('img', {'class': 'attachment-post-thumbnail'}).attrs[
                 'src']
-        elif "mangazuki" in self.__manga_page_link:
+        elif "mangazuki" or "yomanga" in self.__manga_page_link:
             li_elements = BS(content, 'html.parser').find_all('li', {'class': 'wp-manga-chapter'})
             a_elements = BS(li_elements.__str__(), 'html.parser').find_all('a')
+            a_elements = [a for a in a_elements if a.text]
             for a in a_elements:
                 chapter_number = re.search(regex_number, a.text).group(0)
                 lin = a.attrs['href']
                 if "style=list" not in lin:
                     lin += "?style=list"
-                links["Chapter {}".format(chapter_number)] = lin
+
+                if 'end' in a.text.lower():
+                    links["Chapter {} END".format(chapter_number)] = lin
+                else:
+                    links["Chapter {}".format(chapter_number)] = lin
             try:
                 banner_link_image = BS(content, 'html.parser').find('div', {'class': 'summary_image'}).__str__()
                 banner_link_image = BS(banner_link_image, 'html.parser').find('img')
-                banner_link_image = banner_link_image.attrs['data-src']
-            except:
+                if banner_link_image is not None:
+                    banner_link_image = banner_link_image.attrs['data-src']
+                else:
+                    banner_link_image = BS(content, 'html.parser').find('div', {'class': 'c-blog__thumbnail'})
+                    banner_link_image = banner_link_image.find('img')
+                    banner_link_image = banner_link_image.attrs['data-src']
+            except Exception:
                 pass
         else:
             raise RuntimeError("Sumber manga tidak didukung")
@@ -222,7 +243,7 @@ class MangaDownloader:
         #     print("Tidak ada chapter baru. Program berhenti")
         #     exit()
 
-        print("Download %s" % self.__manga_name)
+        print("Download %s %d Chapters" % (self.__manga_name, len(self.__link)))
         for chapter_link in self.__link:
             chapter_name = chapter_link[0]
             link = chapter_link[1]
@@ -387,7 +408,7 @@ class MangaDownloader:
         if os.path.isfile(file_banner):
             now = datetime.now()
             second = now.second
-            now = now.replace(second=second + 1)
+            now = now.replace(second=second + 1 if second < 59 and second > 0 else 0)
             now = time.mktime(now.timetuple())
             os.utime(file_banner, (now, now))
 
